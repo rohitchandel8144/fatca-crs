@@ -1,0 +1,151 @@
+package com.example.database;
+
+import jakarta.persistence.*;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import java.util.Date;
+
+// User Entity
+@Entity
+@Table(name = "users")
+class User {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long userId;
+    private String name;
+    private String email;
+    private String password;
+    
+    @ManyToOne @JoinColumn(name = "role_id", nullable = false)
+    private Role role;
+    
+    @ManyToOne @JoinColumn(name = "institution_id")
+    private Institution institution;
+    
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date createdAt = new Date();
+}
+
+// Role Entity
+@Entity
+@Table(name = "roles")
+class Role {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long roleId;
+    
+    @Enumerated(EnumType.STRING)
+    private RoleName roleName;
+    
+    @Enumerated(EnumType.STRING)
+    private RoleType roleType;
+    
+    enum RoleName { SUPERADMIN, SUBADMIN, IT_ADMIN, OFFICE_BEARER, ADMINISTRATOR, RFI_SUBADMIN, MAKER, CHECKER }
+    enum RoleType { MINISTRY, RFI }
+}
+
+// Institution Entity
+@Entity
+@Table(name = "institutions")
+class Institution {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long institutionId;
+    private String institutionName;
+    private String country;
+    
+    @Enumerated(EnumType.STRING)
+    private Status status = Status.PENDING;
+    
+    @ManyToOne @JoinColumn(name = "created_by", nullable = false)
+    private User createdBy;
+    
+    @ManyToOne @JoinColumn(name = "approved_by")
+    private User approvedBy;
+    
+    enum Status { PENDING, APPROVED, REJECTED }
+}
+
+// Report Entity
+@Entity
+@Table(name = "reports")
+class Report {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long reportId;
+    
+    @ManyToOne @JoinColumn(name = "institution_id", nullable = false)
+    private Institution institution;
+    
+    @ManyToOne @JoinColumn(name = "uploaded_by", nullable = false)
+    private User uploadedBy;
+    
+    @ManyToOne @JoinColumn(name = "approved_by")
+    private User approvedBy;
+    
+    @Enumerated(EnumType.STRING)
+    private Status status = Status.PENDING;
+    
+    private String rejectionReason;
+    private String filePath;
+    
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date submittedAt = new Date();
+    
+    enum Status { PENDING, APPROVED, REJECTED }
+}
+
+// Audit Logs Entity
+@Entity
+@Table(name = "audit_logs")
+class AuditLog {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long logId;
+    
+    @ManyToOne @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+    
+    private String action;
+    
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date timestamp = new Date();
+}
+
+// XML Transmission Entity
+@Entity
+@Table(name = "xml_transmissions")
+class XMLTransmission {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long transmissionId;
+    
+    @ManyToOne @JoinColumn(name = "report_id", nullable = false)
+    private Report report;
+    
+    @ManyToOne @JoinColumn(name = "transmitted_by", nullable = false)
+    private User transmittedBy;
+    
+    @Enumerated(EnumType.STRING)
+    private TransmissionStatus status = TransmissionStatus.SUCCESS;
+    
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date transmittedAt = new Date();
+    
+    enum TransmissionStatus { SUCCESS, FAILED }
+}
+
+// Repository Interfaces
+@Repository interface UserRepository extends JpaRepository<User, Long> {}
+@Repository interface RoleRepository extends JpaRepository<Role, Long> {}
+@Repository interface InstitutionRepository extends JpaRepository<Institution, Long> {}
+@Repository interface ReportRepository extends JpaRepository<Report, Long> {}
+@Repository interface AuditLogRepository extends JpaRepository<AuditLog, Long> {}
+@Repository interface XMLTransmissionRepository extends JpaRepository<XMLTransmission, Long> {}
+
+// PostgreSQL Dependency (To be added in pom.xml)
+/*
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-jpa</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.postgresql</groupId>
+    <artifactId>postgresql</artifactId>
+    <scope>runtime</scope>
+</dependency>
+*/
