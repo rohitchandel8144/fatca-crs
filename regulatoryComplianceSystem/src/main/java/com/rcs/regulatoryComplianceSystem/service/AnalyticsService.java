@@ -1,5 +1,6 @@
 package com.rcs.regulatoryComplianceSystem.service;
 
+import com.rcs.regulatoryComplianceSystem.entity.Role;
 import com.rcs.regulatoryComplianceSystem.repositories.InstitutionRepository;
 import com.rcs.regulatoryComplianceSystem.repositories.ReportRepository;
 import com.rcs.regulatoryComplianceSystem.service.serviceImp.AnalyticsServiceImp;
@@ -20,9 +21,9 @@ public class AnalyticsService implements AnalyticsServiceImp {
     @Autowired
     InstitutionRepository institutionRepository;
 
-    @Override
-    public Map<String, Long> countReportsUploadedByRFI(Integer year) {
-        List<Object[]> results =  reportRepository.countReportsUploadedByRFIForYear(year);
+
+    public Map<String, Long> countReportsUploadedByRFI(Integer year, Role.RoleType roleType) {
+        List<Object[]> results =  reportRepository.getReportCountByMonth(year);
         for(Object[] result: results){
             logger.info("Month: " + result[0] + ", Count: " + result[1]);
         }
@@ -43,6 +44,14 @@ public class AnalyticsService implements AnalyticsServiceImp {
 
         return monthsCount;
     }
+
+    @Override
+    public Map<String, Long> countReportsUploadedByRFI(Integer year) {
+        return Map.of();
+    }
+
+
+
 
     @Override
     public Map<String, Long> countRegistrationByRFI(Integer year) {

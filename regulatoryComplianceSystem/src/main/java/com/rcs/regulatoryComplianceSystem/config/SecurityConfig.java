@@ -62,7 +62,7 @@ public class SecurityConfig {
                     return config;
                 }))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
+                        .requestMatchers("/api/auth/login", "/api/auth/register","/api/user/forgot-password","/api/user/reset-password").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

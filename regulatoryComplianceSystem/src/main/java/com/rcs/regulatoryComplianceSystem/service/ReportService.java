@@ -35,6 +35,9 @@ public class ReportService implements ReportServiceImp {
     @Autowired
     private NotificationRepository notificationRepository;
 
+    @Autowired
+    private InstitutionService institutionService;
+
     @Override
     public String uploadReport(Long institutionId, Long uploadedById, String reportType, String registrationDates, MultipartFile file,String institutionClassification,String regulatoryAuthority) {
         Institution institution = institutionRepository.findById(institutionId)
@@ -89,7 +92,7 @@ public class ReportService implements ReportServiceImp {
                 report.getReportId(),
                 report.getStatus().toString(),
                 report.getReportType(),
-                report.getInstitution(),
+                report.getInstitution() !=null ? report.getInstitution().getInstitutionId():null,
                 report.getInstitutionClassification(),
                 report.getRegulatoryAuthority(),
                 report.getRegistrationDate()
@@ -178,6 +181,7 @@ public class ReportService implements ReportServiceImp {
         Notification notification = new Notification();
         notification.setMessage("Report ID " + reportID + " has been approved by Ministry.");
         notification.setStatus(Notification.Status.UNREAD);
+        notification.setNotificationType(Notification.NotificationType.REPORT);
         notification.setRecipientPanel("RFI");
         notification.setCreatedAt(new Date());
         notificationRepository.save(notification);
@@ -200,6 +204,7 @@ public class ReportService implements ReportServiceImp {
         report.setRejectedBy(user);
         report.setRejectionReason(reason);
         report.setApprovedAt(new Date());
+
         report.setRejectionReason(reason);
         reportRepository.save(report);
 
@@ -207,6 +212,7 @@ public class ReportService implements ReportServiceImp {
         notification.setMessage("Report ID " + reportId + " has been rejected by Ministry. Reason: " + reason);
         notification.setStatus(Notification.Status.UNREAD);
         notification.setRecipientPanel("RFI");
+        notification.setNotificationType(Notification.NotificationType.REPORT);
         notification.setCreatedAt(new Date());
         notificationRepository.save(notification);
         return "Report rejected successfully";
@@ -214,15 +220,72 @@ public class ReportService implements ReportServiceImp {
 
     @Override
     @Transactional
-    public List<Report> getAllPendingReports() {
-        return  reportRepository.findByStatus(Report.Status.APPROVEDBYRFI);
+    public List<ReportResponseDTO> getAllPendingReports() {
+        List<Report> reports= reportRepository.findByStatus(Report.Status.APPROVEDBYRFI);
+        return  reports.stream().map((report)-> new ReportResponseDTO(
+                report.getReportId(),
+                report.getStatus().toString(),
+                report.getReportType(),
+                report.getInstitution() !=null ? report.getInstitution().getInstitutionId():null,
+                report.getInstitutionClassification(),
+                report.getRegulatoryAuthority(),
+                report.getRegistrationDate()
+
+        )).toList();
     }
 
     @Override
-    public List<Report> getAllReports() {
+    public List<ReportResponseDTO> getAllReports() {
         List<Report> reports = reportRepository.findAll();
-        return reports;
+        return reports.stream().map((report)->  new ReportResponseDTO(
+                report.getReportId(),
+                report.getStatus().toString(),
+                report.getReportType(),
+                report.getInstitution()!=null ? report.getInstitution().getInstitutionId() : null,
+                report.getInstitutionClassification(),
+                report.getRegulatoryAuthority(),
+                report.getRegistrationDate()
+        )).toList();
     }
 
+    @Transactional
+    public String deleteReport(Long reportId) {
+        Report report = reportRepository.findById(reportId)
+                .orElseThrow(() -> new IllegalArgumentException("Report not found with ID: " + reportId));
+
+        // ✅ Remove references in the associated entities
+        if (report.getInstitution() != null) {
+            Institution institution = report.getInstitution();
+            institution.getReports().remove(report); // Ensure bidirectional sync
+            report.setInstitution(null);
+            institutionRepository.save(institution);
+        }
+
+        if (report.getUploadedBy() != null) {
+            User uploadedBy = report.getUploadedBy();
+            uploadedBy.getReports().remove(report);
+            report.setUploadedBy(null);
+            userRepository.save(uploadedBy);
+        }
+
+        if (report.getApprovedBy() != null) {
+            User approvedBy = report.getApprovedBy();
+            approvedBy.getApprovedReports().remove(report);
+            report.setApprovedBy(null);
+            userRepository.save(approvedBy);
+        }
+
+        if (report.getRejectedBy() != null) {
+            User rejectedBy = report.getRejectedBy();
+            rejectedBy.getRejectedReports().remove(report);
+            report.setRejectedBy(null);
+            userRepository.save(rejectedBy);
+        }
+
+        // ✅ Finally, delete the report
+        reportRepository.delete(report);
+
+        return "Report deleted successfully.";
+    }
 
 }

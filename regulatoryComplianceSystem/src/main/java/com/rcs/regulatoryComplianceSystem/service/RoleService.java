@@ -13,14 +13,17 @@ public class RoleService {
     public Boolean hasRole(String roleName){
         String userName= SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(userName).orElseThrow(()->new UsernameNotFoundException("email not found"));
-        return user.getRole().getRoleName().toString().equals(roleName);
+        return user.getRoles().stream()
+                .anyMatch(role -> role.getRoleName().toString().equals(roleName));
 
     }
 
     public Boolean hasRoleType(String roleType){
         String userName = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(userName).orElseThrow(()-> new UsernameNotFoundException("email not found"));
-        return user.getRole().getRoleType().toString().equals(roleType);
+        return user.getRoles().stream()
+                .anyMatch(role -> role.getRoleName().toString().equals(roleType));
+
     }
 
 

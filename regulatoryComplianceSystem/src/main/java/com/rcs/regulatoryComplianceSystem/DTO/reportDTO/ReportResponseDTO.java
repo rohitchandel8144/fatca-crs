@@ -1,5 +1,6 @@
 package com.rcs.regulatoryComplianceSystem.DTO.reportDTO;
 
+import com.rcs.regulatoryComplianceSystem.DTO.InstitutionDTO.InstitutionResponseDTO;
 import com.rcs.regulatoryComplianceSystem.entity.Institution;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -16,7 +17,7 @@ public class ReportResponseDTO {
     private Long reportId;
     private String status;
     private String reportType;
-    private Institution institution;
+    private Long institutionId;
     private String institutionClassification;
     private String regulatoryAuthority;
     private String registerDates;

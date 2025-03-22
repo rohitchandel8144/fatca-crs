@@ -5,6 +5,10 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.repository.cdi.Eager;
+
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "roles")
@@ -13,8 +17,8 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Role {
-
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long roleId;
 
     @Enumerated(EnumType.STRING)
@@ -23,6 +27,18 @@ public class Role {
     @Enumerated(EnumType.STRING)
     private RoleType roleType;
 
-    public enum RoleName { SUPERADMIN, SUBADMIN, IT_ADMIN, OFFICE_BEARER, ADMINISTRATOR, RFI_SUBADMIN, MAKER, CHECKER }
-     public enum RoleType { MINISTRY, RFI }
+    @ManyToMany(mappedBy = "roles")
+    private Set<User> users = new HashSet<>();
+
+    @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    private Set<RolePermission> rolePermissions = new HashSet<>();
+
+
+    public enum RoleName {
+        SUPERADMIN, SUBADMIN, IT_ADMIN, OFFICE_BEARER, ADMINISTRATOR, RFI_SUBADMIN, MAKER, CHECKER
+    }
+
+    public enum RoleType {
+        MINISTRY, RFI
+    }
 }

@@ -5,14 +5,17 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -27,9 +30,11 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
     }
 
-    public String generateToken(UserDetails userDetails) {
+    public String generateToken(UserDetails userDetails, List<String> roles, List<String> permissions) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("email", userDetails.getUsername());
+        claims.put("roles", roles); // Store roles separately
+        claims.put("permissions", permissions); // Store permissions separately
 
         return Jwts.builder()
                 .setClaims(claims)
@@ -39,6 +44,8 @@ public class JwtUtil {
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
+
+
 
 
     public String extractUsername(String token) {

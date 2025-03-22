@@ -1,6 +1,8 @@
 package com.rcs.regulatoryComplianceSystem.service;
 
+import com.rcs.regulatoryComplianceSystem.DTO.AuditLogDto;
 import com.rcs.regulatoryComplianceSystem.entity.AuditLog;
+import com.rcs.regulatoryComplianceSystem.entity.Role;
 import com.rcs.regulatoryComplianceSystem.entity.User;
 import com.rcs.regulatoryComplianceSystem.repositories.AuditLogRepository;
 import com.rcs.regulatoryComplianceSystem.repositories.UserRepository;
@@ -10,6 +12,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Objects;
+
+import static java.util.stream.Collectors.toList;
 
 @Service
 public class AuditLogService implements AuditLogImp {
@@ -34,4 +41,24 @@ public class AuditLogService implements AuditLogImp {
             logger.error("Error saving audit log for user {}: {}",email, e);
         }
     }
+
+
+    public List<AuditLogDto> getLogs(String value) {
+        List<AuditLog> auditLogs = auditLogRepository.findAll(); // Fetch all logs once
+
+        Role.RoleType roleType = Objects.equals(value, "MINISTRY") ? Role.RoleType.MINISTRY : Role.RoleType.RFI;
+
+        return auditLogs.stream()
+                .filter(auditLog -> auditLog.getUser().getRoles().stream()
+                        .anyMatch(role -> role.getRoleType() == roleType))
+                .map(filteredLog -> new AuditLogDto(
+                        filteredLog.getLogId(),
+                        filteredLog.getUser().getUserId(),
+                        filteredLog.getAction(),
+                        filteredLog.getTimestamp()
+                ))
+                .toList();
+    }
+
+
 }

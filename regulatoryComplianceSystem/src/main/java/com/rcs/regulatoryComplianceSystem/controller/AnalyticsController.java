@@ -1,7 +1,6 @@
 package com.rcs.regulatoryComplianceSystem.controller;
 
 import com.rcs.regulatoryComplianceSystem.service.AnalyticsService;
-import jdk.jfr.Registered;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,7 +12,8 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/analytics")
-public class AnalyticsController {
+public class
+AnalyticsController {
 
     @Autowired
     private AnalyticsService analyticsService;

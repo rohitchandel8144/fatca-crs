@@ -14,8 +14,8 @@ public interface ReportServiceImp {
 
     public String approveReportMinistry(Long reportID,Long approvedByUserId);
     public String rejectReportMinistry(Long userId, Long reportId, String reason);
-    public List<Report> getAllPendingReports();
-    public List<Report> getAllReports();
+    public List<ReportResponseDTO> getAllPendingReports();
+    public List<ReportResponseDTO> getAllReports();
 
     public List<ReportResponseDTO> getAllPendingRFIReports() ;
 

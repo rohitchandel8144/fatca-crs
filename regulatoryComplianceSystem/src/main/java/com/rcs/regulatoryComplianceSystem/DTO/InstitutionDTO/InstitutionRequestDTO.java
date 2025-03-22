@@ -44,4 +44,8 @@ public class InstitutionRequestDTO {
     @NotBlank(message = "Trade License Number is required")
     private String tradeLicenseNumber;
 
+    private String registrationLicense;
+    private String tradeLicense ;
+    private String documents;
+
 }

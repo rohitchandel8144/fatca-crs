@@ -1,5 +1,6 @@
 package com.rcs.regulatoryComplianceSystem.service;
 
+import com.rcs.regulatoryComplianceSystem.DTO.NotificationDTO.NotificationResponseDTO;
 import com.rcs.regulatoryComplianceSystem.entity.Notification;
 import com.rcs.regulatoryComplianceSystem.repositories.NotificationRepository;
 import com.rcs.regulatoryComplianceSystem.service.serviceImp.NotificationServiceImp;
@@ -22,10 +23,19 @@ public class NotificationService implements NotificationServiceImp {
     }
 
     @Override
-    public List<Notification> getUnreadNotifications(String recipientPanel){
-        return notificationRepository
+    public List<NotificationResponseDTO> getUnreadNotifications(String recipientPanel){
+        List<Notification> notifications =notificationRepository
                 .findByRecipientPanelAndStatus(recipientPanel, Notification.Status.UNREAD);
+        return notifications.stream().map((notification)-> new NotificationResponseDTO(
+                notification.getMessage(),
+                notification.getStatus(),
+                notification.getNotificationType(),
+                notification.getCreatedAt(),
+                notification.getRecipientPanel(),
+                notification.getReason()
+        )).toList();
     }
+
 
     @Override
     public void markAsRead(Long notificationId){

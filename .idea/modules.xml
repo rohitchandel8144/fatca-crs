@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/RCS.iml" filepath="$PROJECT_DIR$/.idea/RCS.iml" />
+      <module fileurl="file://$PROJECT_DIR$/regulatoryComplianceSystem/regulatoryComplianceSystem.iml" filepath="$PROJECT_DIR$/regulatoryComplianceSystem/regulatoryComplianceSystem.iml" />
     </modules>
   </component>
 </project>

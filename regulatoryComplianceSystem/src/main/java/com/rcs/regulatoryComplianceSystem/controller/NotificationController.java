@@ -1,5 +1,6 @@
 package com.rcs.regulatoryComplianceSystem.controller;
 
+import com.rcs.regulatoryComplianceSystem.DTO.NotificationDTO.NotificationResponseDTO;
 import com.rcs.regulatoryComplianceSystem.entity.Notification;
 import com.rcs.regulatoryComplianceSystem.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,15 +19,15 @@ public class NotificationController {
 
     @PreAuthorize("hasRole('SUPERADMIN')")
     @GetMapping("/ministry-panel/{recipientPanel}")
-    public ResponseEntity<List<Notification>> getMinistryNotifications(@PathVariable String recipientPanel){
-        List<Notification> notifications = notificationService.getUnreadNotifications(recipientPanel);
+    public ResponseEntity<List<NotificationResponseDTO>> getMinistryNotifications(@PathVariable String recipientPanel){
+        List<NotificationResponseDTO> notifications = notificationService.getUnreadNotifications(recipientPanel);
         return ResponseEntity.ok(notifications);
     }
 
     @PreAuthorize("hasRole('ADMINISTRATOR')")
     @GetMapping("/rfi-panel/{recipientPanel}")
-    public ResponseEntity<List<Notification>> getRFINotifications(@PathVariable String recipientPanel){
-        List<Notification> notifications = notificationService.getUnreadNotifications(recipientPanel);
+    public ResponseEntity<List<NotificationResponseDTO>> getRFINotifications(@PathVariable String recipientPanel){
+        List<NotificationResponseDTO> notifications = notificationService.getUnreadNotifications(recipientPanel);
         return ResponseEntity.ok(notifications);
     }
 

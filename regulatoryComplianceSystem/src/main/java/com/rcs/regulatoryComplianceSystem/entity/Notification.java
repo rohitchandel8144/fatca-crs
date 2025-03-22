@@ -15,25 +15,28 @@ public class Notification {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String message;  // Notification content
+    private String message;
 
     @Enumerated(EnumType.STRING)
-    private Status status = Status.UNREAD;  // UNREAD / READ
+    private Status status = Status.UNREAD;
 
     @Enumerated(EnumType.STRING)
-    private NotificationType notificationType;  // REGISTRATION or REPORT
+    private NotificationType notificationType;
 
     @Temporal(TemporalType.TIMESTAMP)
-    private Date createdAt = new Date();  // Timestamp when notification is created
+    private Date createdAt = new Date();
 
-    private String recipientPanel; // "MINISTRY" or "RFI"
+    private String recipientPanel;
+
+    private String reason;
+
 
     public enum Status {
         UNREAD, READ
     }
 
     public enum NotificationType {
-        REGISTRATION, // Notifications related to user or institution registration
-        REPORT        // Notifications related to report submissions or approvals
+        REGISTRATION,
+        REPORT
     }
 }

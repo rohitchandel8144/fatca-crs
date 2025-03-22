@@ -33,6 +33,7 @@ public class ReportController {
         return ResponseEntity.ok("Report uploaded successfully and pending approval.");
     }
 
+
     @PreAuthorize("hasRole('SUPERADMIN') or hasRole('SUBADMIN')")
     @GetMapping("/get-all-rfi-reports")
     public ResponseEntity<List<ReportResponseDTO>> getAllRFIReports(){
@@ -40,19 +41,21 @@ public class ReportController {
         return  ResponseEntity.ok(reports);
     }
 
-    @PreAuthorize("hasRole('ADMINISTRATOR')")
+
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR','RFI_SUBADMIN','CHECKER')")
     @PostMapping("/approve-report/{userId}/{reportId}")
     public ResponseEntity<String> approveReport(@PathVariable Long userId,@PathVariable Long reportId){
         String msg = reportService.approveReport(userId,reportId);
         return  ResponseEntity.ok(msg);
     }
 
-    @PreAuthorize("hasRole('ADMINISTRATOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR','RFI_SUBADMIN','CHECKER')")
     @PostMapping("/reject-report/{userId}/{reportId}")
     public ResponseEntity<String> rejectReport(@PathVariable Long userId,@PathVariable Long reportId,@RequestBody String reason){
         String msg = reportService.rejectReport(userId,reportId,reason);
         return  ResponseEntity.ok(msg);
     }
+
 
     @PreAuthorize("hasRole('SUPERADMIN') or hasRole('SUBADMIN')")
     @PostMapping("/approve-report-ministry/{reportId}/{approvedByUserId}")
@@ -70,15 +73,26 @@ public class ReportController {
 
     @PreAuthorize("hasRole('SUPERADMIN') or hasRole('SUBADMIN')")
     @GetMapping("/get-all-pending-reports")
-    public ResponseEntity<List<Report>> getAllPendingReports(){
-        List<Report> reports = reportService.getAllPendingReports();
+    public ResponseEntity<List<ReportResponseDTO>> getAllPendingReports(){
+        List<ReportResponseDTO> reports = reportService.getAllPendingReports();
+        return ResponseEntity.ok(reports);
+    }
+
+
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR','RFI_SUBADMIN','CHECKER')")
+    @GetMapping("/get-all-reports")
+    public ResponseEntity<List<ReportResponseDTO>> getAllreports(){
+        List<ReportResponseDTO> reports = reportService.getAllReports();
         return ResponseEntity.ok(reports);
     }
 
     @PreAuthorize("hasRole('ADMINISTRATOR')")
-    @GetMapping("/get-all-reports")
-    public ResponseEntity<List<Report>> getAllreports(){
-        List<Report> reports = reportService.getAllReports();
-        return ResponseEntity.ok(reports);
+    @DeleteMapping("/delete/{reportId}")
+    public  ResponseEntity<String > deleteReport(@PathVariable Long reportId){
+        String msg= reportService.deleteReport(reportId);
+        return ResponseEntity.ok(msg);
+
+     }
+
     }
-}
+

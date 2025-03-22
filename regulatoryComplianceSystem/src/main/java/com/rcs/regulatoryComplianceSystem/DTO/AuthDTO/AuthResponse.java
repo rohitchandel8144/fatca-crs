@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 @AllArgsConstructor
@@ -15,8 +17,9 @@ public class AuthResponse {
     private boolean success;
     private String token;
     private Long id;
-    private Institution institution;
-    private String role;
+    private Long institution;
+    private List<String> roles;  // Updated to handle multiple roles
     private String name;
     private String email;
+    private List<String> permissions;  // Added to return user-specific permissions
 }

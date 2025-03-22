@@ -5,15 +5,22 @@ import com.rcs.regulatoryComplianceSystem.DTO.InstitutionDTO.InstitutionResponse
 import com.rcs.regulatoryComplianceSystem.DTO.UserDTO.UserRequestDTO;
 import com.rcs.regulatoryComplianceSystem.entity.Institution;
 import com.rcs.regulatoryComplianceSystem.entity.Notification;
+import com.rcs.regulatoryComplianceSystem.entity.Report;
 import com.rcs.regulatoryComplianceSystem.entity.User;
+import com.rcs.regulatoryComplianceSystem.exceptionHandling.customExceptionHandling.UserNotFoundException;
 import com.rcs.regulatoryComplianceSystem.repositories.InstitutionRepository;
 import com.rcs.regulatoryComplianceSystem.repositories.NotificationRepository;
+import com.rcs.regulatoryComplianceSystem.repositories.ReportRepository;
 import com.rcs.regulatoryComplianceSystem.repositories.UserRepository;
 import com.rcs.regulatoryComplianceSystem.service.serviceImp.InstitutionImp;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,11 +35,22 @@ public class InstitutionService implements InstitutionImp {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private AwsService awsService;
+
+    @Autowired
+    private ReportRepository reportRepository;
 
     @Override
-    public void registerInstitution(InstitutionRequestDTO institutionRequestDTO, Long createdByUserId) {
+    public InstitutionResponseDTO registerInstitution(InstitutionRequestDTO institutionRequestDTO, Long createdByUserId, MultipartFile registrationLicense,
+                                     MultipartFile tradeLicense,
+                                     MultipartFile documents) {
         User createdBy = userRepository.findById(createdByUserId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+          String reg= awsService.uploadFile(registrationLicense);
+          String trade= awsService.uploadFile(tradeLicense);
+          String doc= awsService.uploadFile(documents);
 
         Institution institution = new Institution();
         institution.setName(institutionRequestDTO.getName());
@@ -44,22 +62,50 @@ public class InstitutionService implements InstitutionImp {
         institution.setContactLastName(institutionRequestDTO.getContactLastName());
         institution.setTelephone(institutionRequestDTO.getTelephone());
         institution.setBusinessAddress(institutionRequestDTO.getBusinessAddress());
-
         institution.setLicenseAuthority(institutionRequestDTO.getLicenseAuthority());
         institution.setTradeLicenseNumber(institutionRequestDTO.getTradeLicenseNumber());
-
+        institution.setRegistrationLicense(reg);
+        institution.setTradeLicense(trade);
+        institution.setDocuments(doc);
         institution.setStatus(Institution.Status.PENDING);
         institution.setCreatedBy(createdBy);
         institution = institutionRepository.save(institution);
         createdBy.setInstitution(institution);
 
-
         Notification notification = new Notification();
         notification.setMessage("New institution registered with Id: " + institution.getInstitutionId()+" with name :"+ institution.getName());
         notification.setRecipientPanel("MINISTRY");
         notification.setStatus(Notification.Status.UNREAD);
+        notification.setNotificationType(Notification.NotificationType.REGISTRATION);
         notificationRepository.save(notification);
+        return  convertToResponseDTO(institution);
+
     }
+
+
+    public InstitutionResponseDTO convertToResponseDTO(Institution institution) {
+        if (institution == null) {
+            return null;
+        }
+
+        return new InstitutionResponseDTO(
+                institution.getInstitutionId(),
+                institution.getName(),
+                institution.getGiin(),
+                institution.getCountryOfIncorporation(),
+                institution.getStatus() != null ? institution.getStatus().name() : null,
+                institution.getCreatedBy() != null ? institution.getCreatedBy().getName() : null,
+                institution.getContactFirstName(),
+                institution.getContactLastName(),
+                institution.getTelephone(),
+                institution.getLicenseAuthority(),
+                institution.getTradeLicenseNumber(),
+                institution.getDateOfIncorporation(),
+                institution.getBusinessAddress()
+        );
+    }
+
+
 
     @Override
     public void approveInstitution(Long institutionId, Long approvedByUserId) {
@@ -84,11 +130,11 @@ public class InstitutionService implements InstitutionImp {
     public List<InstitutionResponseDTO> getAllInstitutionsApprovedByRFI() {
         List<Institution> institutions = institutionRepository.findByStatus(Institution.Status.APPROVED);
         return institutions.stream()
-                .map(this::convertInstitutionToResponse)
+                .map(this::convertToResponseDTO)
                 .collect(Collectors.toList());
     }
 
-    public void rejectInstitution(Long institutionId, Long rejectedByUserId) {
+    public void rejectInstitution(Long institutionId, Long rejectedByUserId,String reason) {
         Institution institution = institutionRepository.findById(institutionId)
                 .orElseThrow(() -> new RuntimeException("Institution not found"));
         User user = userRepository.findById(rejectedByUserId)
@@ -96,6 +142,7 @@ public class InstitutionService implements InstitutionImp {
 
         institution.setStatus(Institution.Status.REJECTED);
         institution.setRejectedBy(user);
+        institution.setRejectionReason(reason);
         institutionRepository.save(institution);
 
         Notification notification = new Notification();
@@ -108,59 +155,46 @@ public class InstitutionService implements InstitutionImp {
     public InstitutionResponseDTO getInstitutionForReview(Long institutionId) {
          Institution institution= institutionRepository.findById(institutionId)
                 .orElseThrow(() -> new RuntimeException("Institution not found with ID: " + institutionId));
-         return convertToDTO(institution);
+         return convertToResponseDTO(institution);
 
-    }
-
-    private InstitutionResponseDTO convertToDTO(Institution institution) {
-        InstitutionResponseDTO dto = new InstitutionResponseDTO();
-        dto.setInstitutionId(institution.getInstitutionId());
-        dto.setName(institution.getName());
-        dto.setGiin(institution.getGiin());
-        dto.setDateOfIncorporation(institution.getDateOfIncorporation());
-        dto.setCountryOfIncorporation(institution.getCountryOfIncorporation());
-        dto.setBusinessAddressCountry(institution.getBusinessAddressCountry());
-        dto.setContactFirstName(institution.getContactFirstName());
-        dto.setContactLastName(institution.getContactLastName());
-        dto.setTelephone(institution.getTelephone());
-        dto.setBusinessAddress(institution.getBusinessAddress());
-        dto.setLicenseAuthority(institution.getLicenseAuthority());
-        dto.setTradeLicenseNumber(institution.getTradeLicenseNumber());
-
-        dto.setStatus(institution.getStatus().name());
-        dto.setCreatedBy(institution.getCreatedBy().getName());
-        dto.setApprovedBy(institution.getApprovedBy() != null ? institution.getApprovedBy().getName() : null);
-        dto.setCreatedAt(institution.getCreatedBy().getCreatedAt());
-        return dto;
     }
 
 
     public List<InstitutionResponseDTO> getAllPendingInstitutions() {
         List<Institution> institutions = institutionRepository.findByStatus(Institution.Status.PENDING);
         return institutions.stream()
-                .map(this::convertInstitutionToResponse)
+                .map(this::convertToResponseDTO)
                 .toList();
     }
 
-    private InstitutionResponseDTO convertInstitutionToResponse(Institution institution) {
-        InstitutionResponseDTO dto = new InstitutionResponseDTO();
-        dto.setInstitutionId(institution.getInstitutionId());
-        dto.setName(institution.getName());
-        dto.setGiin(institution.getGiin());
-        dto.setDateOfIncorporation(institution.getDateOfIncorporation());
-        dto.setCountryOfIncorporation(institution.getCountryOfIncorporation());
-        dto.setBusinessAddressCountry(institution.getBusinessAddressCountry());
-        dto.setContactFirstName(institution.getContactFirstName());
-        dto.setContactLastName(institution.getContactLastName());
-        dto.setTelephone(institution.getTelephone());
-        dto.setBusinessAddress(institution.getBusinessAddress());
-        dto.setLicenseAuthority(institution.getLicenseAuthority());
-        dto.setTradeLicenseNumber(institution.getTradeLicenseNumber());
-        dto.setStatus(institution.getStatus().name());
-        dto.setCreatedBy(institution.getCreatedBy() != null ? institution.getCreatedBy().toString() : null);
-        dto.setApprovedBy(institution.getApprovedBy() != null ? institution.getApprovedBy().toString() : null);
-        dto.setCreatedAt(institution.getCreatedBy() != null ? institution.getCreatedBy().getCreatedAt() : null);
-        return dto;
+
+    @Transactional
+    public String deleteInstitution(Long userId, Long institutionId) {
+        // Fetch the institution to be deleted
+        Institution institution = institutionRepository.findById(institutionId)
+                .orElseThrow(() -> new RuntimeException("Institution not found"));
+
+        List<User> linkedUsers = userRepository.findByInstitution(institution);
+        for (User linkedUser : linkedUsers) {
+            linkedUser.setInstitution(null);
+            userRepository.save(linkedUser);
+        }
+
+        List<Report> reports = reportRepository.findByInstitution(institution);
+        reportRepository.deleteAll(reports);
+
+        institutionRepository.delete(institution);
+
+        return "Institution and all references deleted successfully";
+    }
+
+    public List<InstitutionResponseDTO> getAllInstitutionsForRFI() {
+        List<Institution.Status> statuses = Arrays.asList(Institution.Status.APPROVED, Institution.Status.REJECTED);
+        List<Institution> institutions = institutionRepository.findByStatusIn(statuses);
+
+        return institutions.stream()
+                .map(this::convertToResponseDTO)
+                .toList();
     }
 
 }
